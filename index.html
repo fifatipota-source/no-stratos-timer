@@ -143,6 +143,10 @@
       const data = snapshot.val();
       updateHighScoreDisplay(data.highScore ?? 0);
       startDisplay(data.startTime ?? 0);
+      // Ενημέρωση timer αμέσως με το σωστό diff
+      const now = Math.floor(Date.now() / 1000);
+      const diff = data.startTime ? now - data.startTime : 0;
+      document.getElementById("timer").innerText = formatTime(diff);
     }
   });
 </script>
