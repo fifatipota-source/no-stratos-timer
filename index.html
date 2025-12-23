@@ -120,13 +120,20 @@
 
   get(timerRef).then(snapshot => {
     if (!snapshot.exists()) {
+      const now = Math.floor(Date.now() / 1000);
       set(timerRef, {
-        startTime: Math.floor(Date.now() / 1000),
+        startTime: now,
         highScore: 0
+      }).then(() => {
+        startDisplay(now);
       });
+    } else {
+      const data = snapshot.val();
+      startDisplay(data.startTime);
     }
   });
 </script>
 
 </body>
 </html>
+
