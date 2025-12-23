@@ -67,7 +67,7 @@
     authDomain: "no-stratos-timer-cb023.firebaseapp.com",
     databaseURL: "https://no-stratos-timer-cb023-default-rtdb.firebaseio.com",
     projectId: "no-stratos-timer-cb023",
-    storageBucket: "no-stratos-timer-cb023.firebasestorage.app",
+    storageBucket: "no-stratos-timer-cb023.appspot.com",
     messagingSenderId: "508177896596",
     appId: "1:508177896596:web:ad14797dbcd5b43219d081"
   };
@@ -79,6 +79,7 @@
   let interval = null;
 
   function formatTime(sec) {
+    if (typeof sec !== "number" || isNaN(sec) || sec < 0) sec = 0;
     const h = String(Math.floor(sec / 3600)).padStart(2, "0");
     const m = String(Math.floor((sec % 3600) / 60)).padStart(2, "0");
     const s = String(sec % 60).padStart(2, "0");
@@ -86,6 +87,10 @@
   }
 
   function startDisplay(startTime) {
+    if (!startTime || typeof startTime !== "number" || isNaN(startTime)) {
+      document.getElementById("timer").innerText = formatTime(0);
+      return;
+    }
     if (interval) clearInterval(interval);
     interval = setInterval(() => {
       const now = Math.floor(Date.now() / 1000);
@@ -94,23 +99,29 @@
     }, 1000);
   }
 
+  function updateHighScoreDisplay(score) {
+    document.getElementById("highScore").innerText =
+      "🏆 High Score: " + formatTime(score);
+  }
+
   onValue(timerRef, (snapshot) => {
     const data = snapshot.val();
-    if (!data) return;
-
-    document.getElementById("highScore").innerText =
-      "High Score: " + formatTime(data.highScore);
-
-    startDisplay(data.startTime);
+    if (!data || typeof data !== "object") {
+      updateHighScoreDisplay(0);
+      startDisplay(0);
+      return;
+    }
+    updateHighScoreDisplay(data.highScore ?? 0);
+    startDisplay(data.startTime ?? 0);
   });
 
   window.resetTimer = async function () {
     const snapshot = await get(timerRef);
-    const data = snapshot.val();
+    const data = snapshot.val() || {};
 
     const now = Math.floor(Date.now() / 1000);
-    const current = now - data.startTime;
-    const newHigh = Math.max(current, data.highScore);
+    const current = data.startTime ? now - data.startTime : 0;
+    const newHigh = Math.max(current, data.highScore || 0);
 
     set(timerRef, {
       startTime: now,
@@ -119,21 +130,22 @@
   };
 
   get(timerRef).then(snapshot => {
-    if (!snapshot.exists()) {
+    if (!snapshot.exists() || !snapshot.val()) {
       const now = Math.floor(Date.now() / 1000);
       set(timerRef, {
         startTime: now,
         highScore: 0
       }).then(() => {
+        updateHighScoreDisplay(0);
         startDisplay(now);
       });
     } else {
       const data = snapshot.val();
-      startDisplay(data.startTime);
+      updateHighScoreDisplay(data.highScore ?? 0);
+      startDisplay(data.startTime ?? 0);
     }
   });
 </script>
 
 </body>
 </html>
-
